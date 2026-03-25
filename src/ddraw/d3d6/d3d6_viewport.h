@@ -75,6 +75,22 @@ namespace dxvk {
       m_device = device;
     }
 
+    D3DMATRIX *GetLegacyProjection() {
+      return &m_legacyProjection;
+    }
+
+    void SetLegacyProjection(D3DMATRIX *matrix) {
+      if (matrix != nullptr)
+        m_legacyProjection = *matrix;
+    }
+
+    D3DMATRIX *GetLegacyMClip() {
+      if (m_skipLegacyMClip)
+        return nullptr;
+
+      return &m_legacyMClip;
+    }
+
   private:
 
     static uint32_t         s_viewportCount;
@@ -83,6 +99,18 @@ namespace dxvk {
     Com<D3DCommonViewport>  m_commonViewport;
 
     D3D6Device*             m_device = nullptr;
+
+    bool                    m_skipLegacyMClip = true;
+    D3DMATRIX               m_legacyProjection = {
+                                1.0f, 0.0f, 0.0f, 0.0f,
+                                0.0f, 1.0f, 0.0f, 0.0f,
+                                0.0f, 0.0f, 1.0f, 0.0f,
+                                0.0f, 0.0f, 0.0f, 1.0f};
+    D3DMATRIX               m_legacyMClip = {
+                                1.0f, 0.0f, 0.0f, 0.0f,
+                                0.0f, 1.0f, 0.0f, 0.0f,
+                                0.0f, 0.0f, 1.0f, 0.0f,
+                                0.0f, 0.0f, 0.0f, 1.0f};
 
     std::vector<D3DLight*>  m_lights;
 

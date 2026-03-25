@@ -1232,26 +1232,64 @@ namespace dxvk {
   HRESULT STDMETHODCALLTYPE D3D5Device::SetTransform(D3DTRANSFORMSTATETYPE state, D3DMATRIX *matrix) {
     Logger::debug(">>> D3D5Device::SetTransform");
 
+    if (unlikely(matrix == nullptr))
+      return DDERR_INVALIDPARAMS;
+
     // Need to also proxy for viewport TransformVertices calls to work
     HRESULT hr = m_proxy->SetTransform(state, matrix);
     if (unlikely(FAILED(hr)))
       return hr;
+
+    if (unlikely(m_currentViewport != nullptr && state == D3DTRANSFORMSTATE_PROJECTION)) {
+      m_currentViewport->SetLegacyProjection(matrix);
+      D3DMATRIX *legacyMClip = m_currentViewport->GetLegacyMClip();
+      if (unlikely(legacyMClip != nullptr)) {
+        D3DMATRIX correctedProjection = MatrixMultiply(legacyMClip, matrix);
+        return m_d3d9->SetTransform(ConvertTransformState(state), &correctedProjection);
+      }
+    }
 
     return m_d3d9->SetTransform(ConvertTransformState(state), matrix);
   }
 
   HRESULT STDMETHODCALLTYPE D3D5Device::GetTransform(D3DTRANSFORMSTATETYPE state, D3DMATRIX *matrix) {
     Logger::debug(">>> D3D5Device::GetTransform");
+
+    if (unlikely(matrix == nullptr))
+      return DDERR_INVALIDPARAMS;
+
+    if (unlikely(m_currentViewport != nullptr && state == D3DTRANSFORMSTATE_PROJECTION)) {
+      D3DMATRIX *legacyProjection = m_currentViewport->GetLegacyProjection();
+      if (unlikely(legacyProjection != nullptr)) {
+        *matrix = *legacyProjection;
+        return D3D_OK;
+      }
+    }
+
     return m_d3d9->GetTransform(ConvertTransformState(state), matrix);
   }
 
   HRESULT STDMETHODCALLTYPE D3D5Device::MultiplyTransform(D3DTRANSFORMSTATETYPE state, D3DMATRIX *matrix) {
     Logger::debug(">>> D3D5Device::MultiplyTransform");
 
+    if (unlikely(matrix == nullptr))
+      return DDERR_INVALIDPARAMS;
+
     // Need to also proxy for viewport TransformVertices calls to work
     HRESULT hr = m_proxy->MultiplyTransform(state, matrix);
     if (unlikely(FAILED(hr)))
       return hr;
+
+    if (unlikely(m_currentViewport != nullptr && state == D3DTRANSFORMSTATE_PROJECTION)) {
+      D3DMATRIX *legacyProjection = m_currentViewport->GetLegacyProjection();
+      D3DMATRIX *legacyMClip = m_currentViewport->GetLegacyMClip();
+      if (unlikely(legacyProjection != nullptr && legacyMClip != nullptr)) {
+        D3DMATRIX projection = MatrixMultiply(legacyProjection, matrix);
+        D3DMATRIX correctedProjection = MatrixMultiply(legacyMClip, &projection);
+        m_currentViewport->SetLegacyProjection(&projection);
+        return m_d3d9->SetTransform(ConvertTransformState(state), &correctedProjection);
+      }
+    }
 
     return m_d3d9->MultiplyTransform(ConvertTransformState(state), matrix);
   }

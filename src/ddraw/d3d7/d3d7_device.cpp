@@ -448,12 +448,6 @@ namespace dxvk {
 
     d3d9::D3DVIEWPORT9* data9 = reinterpret_cast<d3d9::D3DVIEWPORT9*>(data);
 
-    const D3DOptions* d3dOptions = m_commonIntf->GetOptions();
-    // (The) Summoner sets both to 0.0f and expects to get
-    // the behavioral equivalent of setting 0.0f/1.0f
-    if (unlikely(d3dOptions->viewportCorrection && data9->MinZ == 0.0f && data9->MaxZ == 0.0f))
-      data9->MaxZ = 1.0f;
-
     return m_d3d9->SetViewport(data9);
   }
 

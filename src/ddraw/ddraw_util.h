@@ -1636,4 +1636,51 @@ namespace dxvk {
         || rs == D3DRENDERSTATE_CLIPPLANEENABLE;
   }
 
+  inline bool SetLegacyClipScale(D3DMATRIX& matrix, D3DVECTOR* scale, D3DVECTOR* mclip) {
+    ZeroMemory(&matrix, sizeof(matrix));
+    matrix._11 = scale->x;
+    matrix._22 = scale->y;
+    matrix._33 = scale->z;
+    matrix._41 = mclip->x;
+    matrix._42 = mclip->y;
+    matrix._43 = mclip->z;
+    matrix._44 = 1.0f;
+
+    // Check if we can skip legacy projection
+    if (scale->x == 1.0f && scale->y == 1.0f && scale->z == 1.0f &&
+        mclip->x == 0.0f && mclip->y == 0.0f && mclip->z == 0.0f) {
+        return true;
+    }
+
+    return false;
+  }
+
+  inline D3DMATRIX MatrixMultiply(const D3DMATRIX* a, const D3DMATRIX* b) {
+    D3DMATRIX result;
+
+    const __m128 b0 = _mm_loadu_ps(&b->_11);
+    const __m128 b1 = _mm_loadu_ps(&b->_21);
+    const __m128 b2 = _mm_loadu_ps(&b->_31);
+    const __m128 b3 = _mm_loadu_ps(&b->_41);
+
+    for (int i = 0; i < 4; i++) {
+      const float* a_ptr = (&a->_11) + i * 4;
+      __m128 a = _mm_loadu_ps(a_ptr);
+
+      __m128 a0 = _mm_shuffle_ps(a, a, _MM_SHUFFLE(0, 0, 0, 0));
+      __m128 a1 = _mm_shuffle_ps(a, a, _MM_SHUFFLE(1, 1, 1, 1));
+      __m128 a2 = _mm_shuffle_ps(a, a, _MM_SHUFFLE(2, 2, 2, 2));
+      __m128 a3 = _mm_shuffle_ps(a, a, _MM_SHUFFLE(3, 3, 3, 3));
+
+      __m128 r = _mm_add_ps(
+          _mm_add_ps(_mm_mul_ps(a0, b0), _mm_mul_ps(a1, b1)),
+          _mm_add_ps(_mm_mul_ps(a2, b2), _mm_mul_ps(a3, b3))
+      );
+
+      float* r_ptr = (&result._11) + i * 4;
+      _mm_storeu_ps(r_ptr, r);
+    }
+
+    return result;
+  }
 }

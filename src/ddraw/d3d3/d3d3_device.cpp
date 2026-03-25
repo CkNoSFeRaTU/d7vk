@@ -509,6 +509,16 @@ namespace dxvk {
             if (unlikely(FAILED(hr)))
               continue;
 
+            if (unlikely(m_currentViewport != nullptr && s.dtstTransformStateType == D3DTRANSFORMSTATE_PROJECTION)) {
+              m_currentViewport->SetLegacyProjection(&matrix);
+              D3DMATRIX *legacyMClip = m_currentViewport->GetLegacyMClip();
+              if (unlikely(legacyMClip != nullptr)) {
+                D3DMATRIX correctedProjection = MatrixMultiply(legacyMClip, &matrix);
+                hr = m_d3d9->SetTransform(ConvertTransformState(s.dtstTransformStateType), &correctedProjection);
+                continue;
+              }
+            }
+
             hr = m_d3d9->SetTransform(ConvertTransformState(s.dtstTransformStateType), &matrix);
             if (unlikely(FAILED(hr)))
               Logger::warn("D3D3Device::Execute: Failed to set D3D9 transform");

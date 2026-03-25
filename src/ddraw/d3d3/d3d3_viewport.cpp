@@ -138,8 +138,8 @@ namespace dxvk {
     // are the nonhomogeneous coordinates that result from the perspective division."
     data->dvMaxX   = 1.0f;
     data->dvMaxY   = 1.0f;
-    data->dvScaleX = 1.0f;
-    data->dvScaleY = 1.0f;
+    data->dvScaleX = m_legacyMClip._11 * (float)data->dwWidth / 2.0f;
+    data->dvScaleY = m_legacyMClip._22 * (float)data->dwHeight / 2.0f;
 
     return D3D_OK;
   }
@@ -172,6 +172,18 @@ namespace dxvk {
     viewport9->Height = data->dwHeight;
     viewport9->MinZ   = 0.0f;
     viewport9->MaxZ   = 1.0f;
+
+    D3DVECTOR m_legacyScale {
+      2.0f * data->dvScaleX / (float)data->dwWidth,
+      2.0f * data->dvScaleY / (float)data->dwHeight,
+      1.0f
+    };
+    D3DVECTOR m_legacyClip {
+      0.0f,
+      0.0f,
+      0.0f
+    };
+    m_skipLegacyMClip = SetLegacyClipScale(m_legacyMClip, &m_legacyScale, &m_legacyClip);
 
     m_commonViewport->MarkViewportAsSet();
 
