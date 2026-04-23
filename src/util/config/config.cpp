@@ -1905,6 +1905,10 @@ namespace dxvk {
       { "ddraw.backBufferWriteBack",        "True" },
       { "ddraw.backBufferGuard",        "Disabled" },
     }} },
+    /* SWAT 3: Close Quarters Battle              */
+    { R"(\\swat\.exe$)", {{
+      { "ddraw.forceLegacyPresent",         "True" },
+    }} },
 
     /**********************************************/
     /* D3D5 GAMES                                 */
