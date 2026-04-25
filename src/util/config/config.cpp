@@ -2055,6 +2055,11 @@ namespace dxvk {
     { R"(\\OutBreak\.exe$)", {{
       { "ddraw.forceLegacyPresent",         "True" },
     }} },
+    /* Resident Evil                              *
+     * Fixes black lines in the background image  */
+    { R"(\\ResidentEvil\.exe$)", {{
+      { "ddraw.vertexOffset",               "-0.5" },
+    }} },
 
   };
 
